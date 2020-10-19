@@ -34,6 +34,7 @@ LIKE_URL = 'https://www.instagram.com/web/likes/%s/like/'
 UNLIKE_URL = 'https://www.instagram.com/web/likes/%s/unlike/'
 ADD_COMMENT_URL = 'https://www.instagram.com/web/comments/%s/add/'
 DELETE_COMMENT_URL = 'https://www.instagram.com/web/comments/%s/delete/%s/'
+ACCOUNT_PROFILE = 'https://www.instagram.com/accounts/edit/?__a=1'
 
 ACCOUNT_MEDIAS2 = 'https://www.instagram.com/graphql/query/?query_id=17880160963012870&id={{accountId}}&first=10&after='
 
@@ -172,3 +173,6 @@ def get_add_comment_url(media_id):
 def get_delete_comment_url(media_id, comment_id):
     return DELETE_COMMENT_URL % (urllib.parse.quote_plus(str(media_id)), urllib.parse.quote_plus(str(comment_id)))
 
+
+def get_account_profile_url():
+    return ACCOUNT_PROFILE

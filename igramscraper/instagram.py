@@ -79,7 +79,7 @@ class Instagram:
         else:
             Instagram.instance_cache = session_folder
 
-        Instagram.instance_cache.empty_saved_cookies()
+        # Instagram.instance_cache.empty_saved_cookies()
 
 
         self.session_username = username
@@ -108,6 +108,33 @@ class Instagram:
         param int count
         """
         endpoints.request_media_count = count
+
+    def get_account_profile(self):
+        """
+        :return: a dict extract from page
+        """
+        time.sleep(self.sleep_between_requests)
+        response = self.__req.get(
+            endpoints.get_account_profile_url(), cookies=self.user_session)
+
+        if Instagram.HTTP_NOT_FOUND == response.status_code:
+            raise InstagramNotFoundException(
+                'Failed to fetch account with given id')
+
+        if Instagram.HTTP_OK != response.status_code:
+            raise InstagramException.default(response.text,
+                                             response.status_code)
+
+        json_response = response.json()
+        if not json_response:
+            raise InstagramException('Response does not JSON')
+
+        # if json_response['form_data'] != 'ok':
+        #     message = json_response['message'] if (
+        #             'message' in json_response.keys()) else 'Unknown Error'
+        #     raise InstagramException(message)
+
+        return json_response['form_data']
 
     def get_account_by_id(self, id):
         """
@@ -1434,6 +1461,7 @@ class Instagram:
 
         cookies = response.cookies.get_dict()
 
+        cookies.update({"ds_user_id": session.get("ds_user_id")})
 
         if cookies is None or not 'ds_user_id' in cookies.keys():
             return False
@@ -1514,6 +1542,18 @@ class Instagram:
 
         else:
             self.user_session = session
+
+        csrftoken = self.user_session.get('csrftoken')
+        sessionid = self.user_session.get('sessionid')
+        mid = self.user_session.get('mid')
+        ds_user_id = self.user_session.get('ds_user_id')
+        new_cookies = {
+            'cookie': f"sessionid={sessionid};",
+        }
+        new_cookies.update(self.user_session)
+        self.__req.cookies.update(new_cookies)
+        
+        self.cookie = new_cookies
 
         return self.generate_headers(self.user_session)
 
@@ -1615,7 +1655,7 @@ class Instagram:
 
         response = self.__req.post(endpoints.get_add_comment_url(media_id),
                                    data=body, headers=self.generate_headers(
-                self.user_session))
+                self.user_session), cookies=self.cookie)
 
         if not Instagram.HTTP_OK == response.status_code:
             raise InstagramException.default(response.text,
@@ -1670,7 +1710,7 @@ class Instagram:
                                                      Media) else media_id
         response = self.__req.post(endpoints.get_like_url(media_id),
                                    headers=self.generate_headers(
-                                       self.user_session))
+                                       self.user_session), cookies=self.cookie)
 
         if not Instagram.HTTP_OK == response.status_code:
             raise InstagramException.default(response.text,
@@ -1721,7 +1761,7 @@ class Instagram:
             try:
                 follow = self.__req.post(url,
                                          headers=self.generate_headers(
-                                             self.user_session))
+                                             self.user_session), cookies=self.cookie)
                 if follow.status_code == Instagram.HTTP_OK:
                     return True
             except:
